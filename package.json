@@ -1,0 +1,22 @@
+{
+  "name": "bsale-validar-codigo-barras",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "pw:chrome": "node scripts/playwright-chrome-extension.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.4.0",
+    "@types/chrome": "^0.1.38",
+    "playwright": "^1.58.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.1"
+  }
+}

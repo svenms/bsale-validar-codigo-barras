@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.playwright-chrome-profile/
+.playwright-chromium-profile/
+*.log
+*.zip
