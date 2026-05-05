@@ -59,6 +59,13 @@
     </div>
 
     <div class="row">
+      <label for="stock_reception">
+        Activar en recepción stock (`stock.bsale.app` … `/admin/stock/reception`)
+      </label>
+      <input id="stock_reception" type="checkbox" />
+    </div>
+
+    <div class="row">
       <label for="volume">Volumen de tonos</label>
       <input id="volume" type="range" min="0" max="100" value="60" />
       <div class="volume-value">
@@ -95,9 +102,33 @@
     </div>
 
     <div class="muted">
-      Los tonos se reproducen cuando detectamos que el carrito cambió tras el
-      `Enter` en el campo `#sale_q`.
+      En ventas (`from_scratch`, `documents/sales`, `mobile/sales`): tonos tras `Enter` en `#sale_q`;
+      si el ítem exige IMEI/Serie, se abre automáticamente la captura y el foco queda listo para el
+      pistoleo; al validar la serie suena TRUE/FALSE y el foco vuelve a `#sale_q`. En recepción stock:
+      sonido FALSE si aparece «Serie repetida».
     </div>
+
+    <hr style="margin: 22px 0; border: none; border-top: 1px solid #ddd" />
+
+    <h2 style="font-size: 15px; margin: 0 0 10px 0">Actualización desde GitHub</h2>
+    <p class="muted" style="margin: 6px 0">
+      Versión instalada:
+      <strong id="installed_version">—</strong>
+    </p>
+    <p class="muted" id="update_status" style="margin: 6px 0">—</p>
+    <p class="muted" id="remote_version_row" style="margin: 6px 0; display: none">
+      Última publicada en GitHub:
+      <strong id="remote_version"></strong>
+    </p>
+    <p id="update_hint_ok" style="margin: 8px 0; display: none; color: #0a7a29; font-size: 13px">
+      Hay una versión nueva. Descarga el ZIP del release, sustituye la carpeta en «Cargar extensión sin empaquetar» y pulsa Actualizar en <code>chrome://extensions</code>.
+    </p>
+    <div class="row" style="margin-top: 12px">
+      <button type="button" id="check_updates">Comprobar actualizaciones</button>
+    </div>
+    <p style="margin-top: 10px">
+      <a id="update_link" href="#" target="_blank" rel="noopener noreferrer" style="display: none">Abrir página del release</a>
+    </p>
 
     <script type="module" src="/src/options/options.ts"></script>
   </body>

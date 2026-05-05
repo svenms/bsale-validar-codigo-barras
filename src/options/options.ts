@@ -1,4 +1,7 @@
-type PageKey = 'from_scratch' | 'documents_sales' | 'mobile_sales'
+import type { UpdateCheckState } from '../shared/updateCheckState'
+import { UPDATE_STORAGE_KEY } from '../shared/updateCheckState'
+
+type PageKey = 'from_scratch' | 'documents_sales' | 'mobile_sales' | 'stock_reception'
 type TonePreset =
   | 'classic'
   | 'bell'
@@ -25,6 +28,7 @@ const DEFAULT_SETTINGS: Settings = {
     from_scratch: true,
     documents_sales: true,
     mobile_sales: true,
+    stock_reception: true,
   },
   volume: 0.6,
   toneTruePreset: 'classic',
@@ -34,12 +38,36 @@ const DEFAULT_SETTINGS: Settings = {
 const elFrom = document.getElementById('from_scratch') as HTMLInputElement | null
 const elDocsSales = document.getElementById('documents_sales') as HTMLInputElement | null
 const elMobile = document.getElementById('mobile_sales') as HTMLInputElement | null
+const elStockReception = document.getElementById('stock_reception') as HTMLInputElement | null
 const elVolume = document.getElementById('volume') as HTMLInputElement | null
 const elVolumeLabel = document.getElementById('volume_label') as HTMLSpanElement | null
 const elToneTruePreset = document.getElementById('tone_true_preset') as HTMLSelectElement | null
 const elToneFalsePreset = document.getElementById('tone_false_preset') as HTMLSelectElement | null
+const elInstalledVersion = document.getElementById('installed_version')
+const elUpdateStatus = document.getElementById('update_status')
+const elRemoteRow = document.getElementById('remote_version_row')
+const elRemoteVersion = document.getElementById('remote_version')
+const elUpdateHintOk = document.getElementById('update_hint_ok')
+const elUpdateLink = document.getElementById('update_link') as HTMLAnchorElement | null
+const elCheckUpdates = document.getElementById('check_updates') as HTMLButtonElement | null
 
-if (!elFrom || !elDocsSales || !elMobile || !elVolume || !elVolumeLabel || !elToneTruePreset || !elToneFalsePreset) {
+if (
+  !elFrom ||
+  !elDocsSales ||
+  !elMobile ||
+  !elStockReception ||
+  !elVolume ||
+  !elVolumeLabel ||
+  !elToneTruePreset ||
+  !elToneFalsePreset ||
+  !elInstalledVersion ||
+  !elUpdateStatus ||
+  !elRemoteRow ||
+  !elRemoteVersion ||
+  !elUpdateHintOk ||
+  !elUpdateLink ||
+  !elCheckUpdates
+) {
   // Si el HTML no coincide con el TS, preferimos fallar de forma visible.
   throw new Error('Faltan elementos en options.html')
 }
@@ -50,6 +78,7 @@ function render(): void {
   elFrom.checked = settings.pages.from_scratch
   elDocsSales.checked = settings.pages.documents_sales
   elMobile.checked = settings.pages.mobile_sales
+  elStockReception.checked = settings.pages.stock_reception
   elVolume.value = String(Math.round(settings.volume * 100))
   elVolumeLabel.textContent = String(Math.round(settings.volume * 100))
   elToneTruePreset.value = settings.toneTruePreset
@@ -99,6 +128,18 @@ function bind(): void {
     persist()
   })
 
+  elStockReception.addEventListener('change', () => {
+    settings = {
+      ...settings,
+      pages: {
+        ...settings.pages,
+        stock_reception: elStockReception.checked,
+      },
+    }
+    render()
+    persist()
+  })
+
   elVolume.addEventListener('input', () => {
     const v = Math.max(0, Math.min(100, Number(elVolume.value)))
     settings = {
@@ -124,6 +165,55 @@ function bind(): void {
   })
 }
 
+function formatCheckedAt(ts: number | null): string {
+  if (ts == null || !Number.isFinite(ts)) return '—'
+  try {
+    return new Date(ts).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
+  } catch {
+    return '—'
+  }
+}
+
+function renderUpdateUi(state: UpdateCheckState | undefined): void {
+  const installed = chrome.runtime.getManifest().version
+  elInstalledVersion.textContent = installed
+
+  if (!state) {
+    elUpdateStatus.textContent = 'Aún no hay comprobación guardada. Pulsa el botón o espera el chequeo automático (cada 8 h).'
+    elRemoteRow.style.display = 'none'
+    elUpdateHintOk.style.display = 'none'
+    elUpdateLink.style.display = 'none'
+    return
+  }
+
+  if (state.error) {
+    elUpdateStatus.textContent = `Última comprobación: ${formatCheckedAt(state.lastCheckedAt)}. Error: ${state.error}`
+  } else if (state.remoteVersion) {
+    elUpdateStatus.textContent = state.hasUpdate
+      ? `Última comprobación: ${formatCheckedAt(state.lastCheckedAt)}. Hay una versión nueva en GitHub.`
+      : `Última comprobación: ${formatCheckedAt(state.lastCheckedAt)}. Tu versión está al día con GitHub.`
+  } else {
+    elUpdateStatus.textContent = `Última comprobación: ${formatCheckedAt(state.lastCheckedAt)}. No se obtuvo versión remota (¿hay releases o tags en el repo?).`
+  }
+
+  if (state.remoteVersion) {
+    elRemoteRow.style.display = 'block'
+    elRemoteVersion.textContent = state.remoteVersion
+  } else {
+    elRemoteRow.style.display = 'none'
+  }
+
+  if (state.hasUpdate && state.releasePageUrl) {
+    elUpdateHintOk.style.display = 'block'
+    elUpdateLink.style.display = 'inline'
+    elUpdateLink.href = state.releasePageUrl
+    elUpdateLink.textContent = `Abrir release v${state.remoteVersion}`
+  } else {
+    elUpdateHintOk.style.display = 'none'
+    elUpdateLink.style.display = 'none'
+  }
+}
+
 async function init(): Promise<void> {
   const res = await chrome.storage.local.get('bsale_barras_settings')
   if (res?.bsale_barras_settings) {
@@ -140,6 +230,31 @@ async function init(): Promise<void> {
   }
   render()
   bind()
+
+  const upd = (await chrome.storage.local.get(UPDATE_STORAGE_KEY))[UPDATE_STORAGE_KEY] as UpdateCheckState | undefined
+  renderUpdateUi(upd)
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return
+    const next = changes[UPDATE_STORAGE_KEY]?.newValue as UpdateCheckState | undefined
+    if (next) renderUpdateUi(next)
+  })
+
+  elCheckUpdates.addEventListener('click', () => {
+    elCheckUpdates.disabled = true
+    elUpdateStatus.textContent = 'Comprobando…'
+    chrome.runtime.sendMessage({ type: 'BSALE_BARRAS_CHECK_UPDATES' }, (response: unknown) => {
+      elCheckUpdates.disabled = false
+      const err = chrome.runtime.lastError
+      if (err) {
+        elUpdateStatus.textContent = `No se pudo comprobar: ${err.message}`
+        return
+      }
+      const r = response as { ok?: boolean; state?: UpdateCheckState }
+      if (r?.state) renderUpdateUi(r.state)
+      else elUpdateStatus.textContent = 'Respuesta inesperada del proceso en segundo plano.'
+    })
+  })
 }
 
 void init()

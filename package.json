@@ -1,12 +1,14 @@
 {
   "name": "bsale-validar-codigo-barras",
-  "version": "1.0.0",
+  "version": "0.2.12",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "pw:chrome": "node scripts/playwright-chrome-extension.mjs"
+    "pw:chrome": "node scripts/playwright-chrome-extension.mjs",
+    "pw:verify": "node scripts/playwright-verify-extension.mjs",
+    "pw:serial": "node scripts/playwright-serial-sounds.mjs"
   },
   "keywords": [],
   "author": "",
