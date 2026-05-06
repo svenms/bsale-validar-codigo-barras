@@ -1,0 +1,79 @@
+name: Release CRX
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+      VERSION: ${{ github.ref_name }}
+      EXTENSION_ID: ${{ secrets.EXTENSION_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Restore PEM key
+        run: |
+          mkdir -p .tmp
+          echo "${{ secrets.CRX_PEM_BASE64 }}" | base64 --decode > .tmp/extension.pem
+          chmod 600 .tmp/extension.pem
+
+      - name: Build CRX artifact
+        run: node scripts/build-crx.mjs --key .tmp/extension.pem --out artifacts
+
+      - name: Generate updates.xml for this release
+        run: |
+          node scripts/generate-updates-xml.mjs \
+            --version "${TAG_NAME#v}" \
+            --extension-id "${EXTENSION_ID}" \
+            --codebase "https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/bsale-validar-codigo-barras-v${TAG_NAME#v}.crx" \
+            --out artifacts/updates.xml
+
+      - name: Create release if missing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${TAG_NAME}" >/dev/null 2>&1 || \
+          gh release create "${TAG_NAME}" --title "${TAG_NAME}" --notes "Release ${TAG_NAME}"
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${TAG_NAME}" artifacts/bsale-validar-codigo-barras-v${TAG_NAME#v}.crx --clobber
+          gh release upload "${TAG_NAME}" artifacts/updates.xml --name updates.xml --clobber
+
+      - name: Update updates.xml in master
+        run: |
+          git checkout master
+          cp artifacts/updates.xml updates.xml
+          if git diff --quiet -- updates.xml; then
+            echo "updates.xml sin cambios"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add updates.xml
+          git commit -m "Update updates.xml for ${TAG_NAME}"
+          git push origin master

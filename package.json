@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:crx": "node scripts/build-crx.mjs",
+    "generate:updates-xml": "node scripts/generate-updates-xml.mjs",
     "pw:chrome": "node scripts/playwright-chrome-extension.mjs",
     "pw:verify": "node scripts/playwright-verify-extension.mjs",
     "pw:serial": "node scripts/playwright-serial-sounds.mjs"
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.1.38",
+    "crx3": "^2.0.0",
     "playwright": "^1.58.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.1"

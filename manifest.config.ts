@@ -4,6 +4,7 @@ export default defineManifest({
   manifest_version: 3,
   name: 'Bsale Validar Codigo Barras',
   version: '0.2.14',
+  update_url: 'https://raw.githubusercontent.com/svenms/bsale-validar-codigo-barras/master/updates.xml',
   permissions: ['storage', 'alarms', 'tabs', 'cookies'],
   host_permissions: [
     'https://api.github.com/*',

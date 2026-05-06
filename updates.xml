@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
+  <!-- Placeholder inicial. El workflow de release reemplaza appid/version/codebase automáticamente. -->
+  <app appid="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">
+    <updatecheck codebase="https://example.invalid/bsale-validar-codigo-barras.crx" version="0.0.0" />
+  </app>
+</gupdate>

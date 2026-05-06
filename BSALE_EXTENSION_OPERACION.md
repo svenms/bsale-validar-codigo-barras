@@ -178,3 +178,43 @@ Cuando algo deje de funcionar, revisar en este orden:
 ---
 
 Si Bsale cambia fuerte (endpoints, payloads o estructura), este documento sirve como mapa para detectar rapido donde ajustar y como validar regresion.
+
+## 11) Auto-update CRX (GitHub + PEM)
+
+### 11.1 Requisitos
+
+- Tener la clave `.pem` privada de la extension (NO subirla al repo).
+- Conocer el `extension_id` fijo de esa clave.
+- En GitHub (repo settings -> Secrets and variables -> Actions), crear:
+  - `CRX_PEM_BASE64`: contenido del `.pem` en base64.
+  - `EXTENSION_ID`: id de la extension (32 letras).
+
+### 11.2 Flujo automatizado
+
+- Existe workflow: `.github/workflows/release-crx.yml`
+- Se ejecuta al hacer push de tag `v*`.
+- Acciones:
+  1. Compila extension (`npm run build`).
+  2. Genera CRX firmado con PEM.
+  3. Genera `updates.xml` con el `extension_id`, version y URL del CRX.
+  4. Sube el `.crx` y `updates.xml` al release del tag.
+  5. Actualiza `updates.xml` en rama `master` (URL usada por `update_url`).
+
+### 11.3 Instalacion inicial de CRX (primera vez)
+
+1. Abrir `chrome://extensions`.
+2. Activar **Developer mode**.
+3. Arrastrar el archivo `.crx` al navegador y confirmar instalacion.
+4. Verificar que la extension aparece con el mismo ID esperado.
+
+> Nota: si Chrome bloquea instalacion directa por politicas, se puede usar politica de empresa o flujo administrado. Para pruebas locales suele bastar con Developer mode.
+
+### 11.4 Publicar una nueva version con auto-update
+
+1. Subir version en `manifest.config.ts` y `package.json` (ej. `0.2.15`).
+2. Commit + push a `master`.
+3. Crear tag y push:
+   - `git tag -a v0.2.15 -m "Release v0.2.15"`
+   - `git push origin v0.2.15`
+4. Esperar workflow `Release CRX`.
+5. Chrome detectara el nuevo `updates.xml` y actualizara la extension instalada por CRX.
