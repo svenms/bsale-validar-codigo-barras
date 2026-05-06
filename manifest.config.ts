@@ -3,7 +3,7 @@ import { defineManifest } from '@crxjs/vite-plugin'
 export default defineManifest({
   manifest_version: 3,
   name: 'Bsale Validar Codigo Barras',
-  version: '0.2.13',
+  version: '0.2.14',
   permissions: ['storage', 'alarms', 'tabs', 'cookies'],
   host_permissions: [
     'https://api.github.com/*',
