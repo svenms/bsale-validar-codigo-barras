@@ -27,7 +27,16 @@ let widgetPosition: WidgetPosition | null = null
 let preventNextClick = false
 
 function isBsaleSite(): boolean {
-  return /(?:^|\.)bsale\.(?:cl|app)$/i.test(window.location.hostname)
+  return /(?:^|\.)bsale\.(?:cl|app|io)$/i.test(window.location.hostname)
+}
+
+function isContextInvalidatedError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error)
+  return /extension context invalidated/i.test(msg)
+}
+
+function hasLiveExtensionContext(): boolean {
+  return typeof chrome !== 'undefined' && !!chrome.runtime?.id
 }
 
 function formatWidgetText(state: PendingDispatchState): string {
@@ -66,7 +75,13 @@ function applyWidgetPosition(widget: HTMLElement, pos: WidgetPosition | null): v
 }
 
 function persistWidgetPosition(pos: WidgetPosition): void {
-  chrome.storage.local.set({ [WIDGET_POS_STORAGE_KEY]: pos })
+  if (!hasLiveExtensionContext()) return
+  chrome.storage.local.set({ [WIDGET_POS_STORAGE_KEY]: pos }).catch((error) => {
+    if (!isContextInvalidatedError(error)) {
+      // eslint-disable-next-line no-console
+      console.warn('[bsale-barras] no se pudo persistir posición del widget', error)
+    }
+  })
 }
 
 function bindDrag(widget: HTMLButtonElement): void {
@@ -154,12 +169,18 @@ function renderWidget(): void {
 }
 
 function requestCheck(): void {
+  if (!hasLiveExtensionContext()) return
   chrome.runtime.sendMessage({ type: 'BSALE_BARRAS_CHECK_PENDING_INTERNAL_DISPATCH' }, () => {
-    // noop: el estado llega por storage.
+    const lastError = chrome.runtime.lastError
+    if (lastError && !/extension context invalidated/i.test(lastError.message)) {
+      // eslint-disable-next-line no-console
+      console.warn('[bsale-barras] error al pedir revisión', lastError.message)
+    }
   })
 }
 
 async function loadInitialState(): Promise<void> {
+  if (!hasLiveExtensionContext()) return
   const data = await chrome.storage.local.get([
     SETTINGS_STORAGE_KEY,
     PENDING_DISPATCH_STORAGE_KEY,
@@ -176,6 +197,7 @@ async function loadInitialState(): Promise<void> {
 }
 
 function bindStorageSync(): void {
+  if (!hasLiveExtensionContext()) return
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return
     if (changes[SETTINGS_STORAGE_KEY]) {
@@ -204,7 +226,12 @@ function startPeriodicChecks(): void {
 
 async function init(): Promise<void> {
   if (!isBsaleSite()) return
-  await loadInitialState()
+  try {
+    await loadInitialState()
+  } catch (error) {
+    if (isContextInvalidatedError(error)) return
+    throw error
+  }
   bindStorageSync()
   startPeriodicChecks()
   requestCheck()

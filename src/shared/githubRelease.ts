@@ -18,7 +18,7 @@ function stripVersionTag(tag: string): string {
 
 /**
  * Última versión publicada y enlace útil.
- * 1) Release más reciente.
+ * 1) Release más reciente (sin usar `/releases/latest` para evitar 404 cuando no hay releases).
  * 2) Si no hay releases, el tag semver más alto entre los devueltos por la API.
  */
 export async function fetchLatestPublishedVersion(): Promise<{
@@ -29,15 +29,25 @@ export async function fetchLatestPublishedVersion(): Promise<{
   const headers = ghHeaders()
 
   try {
-    const rel = await fetch(`${base}/releases/latest`, { headers })
+    const rel = await fetch(`${base}/releases?per_page=10`, { headers })
     if (rel.ok) {
-      const j = (await rel.json()) as { tag_name?: string; html_url?: string }
-      const raw = String(j.tag_name ?? '')
+      const list = (await rel.json()) as Array<{
+        tag_name?: string
+        html_url?: string
+        draft?: boolean
+        prerelease?: boolean
+      }>
+      const latestStable = list.find((r) => r && r.draft !== true && r.prerelease !== true)
+      if (!latestStable) throw new Error('No stable release')
+      const raw = String(latestStable.tag_name ?? '')
       const version = stripVersionTag(raw)
       if (version && /^\d+\.\d+/.test(version)) {
         return {
           version,
-          releasePageUrl: typeof j.html_url === 'string' ? j.html_url : `https://github.com/${GITHUB_REPO_FULL}/releases/latest`,
+          releasePageUrl:
+            typeof latestStable.html_url === 'string'
+              ? latestStable.html_url
+              : `https://github.com/${GITHUB_REPO_FULL}/releases`,
         }
       }
     }

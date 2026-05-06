@@ -13,6 +13,7 @@ export default defineManifest({
     'https://app.bsale.cl/*',
     'https://report.bsale.app/*',
     'https://login.bsale.cl/*',
+    'https://product-admin.bsale.io/*',
   ],
   background: {
     service_worker: 'src/background.ts',
@@ -38,6 +39,7 @@ export default defineManifest({
         'https://app.bsale.cl/*',
         'https://stock.bsale.app/*',
         'https://report.bsale.app/*',
+        'https://product-admin.bsale.io/*',
       ],
       run_at: 'document_idle',
     },

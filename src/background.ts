@@ -28,6 +28,7 @@ const COOKIE_SOURCE_URLS = [
   'https://clients.bsale.cl/',
   'https://report.bsale.app/',
   'https://login.bsale.cl/',
+  'https://product-admin.bsale.io/',
 ]
 
 const DEFAULT_PENDING_DISPATCH_ENABLED = true
@@ -142,7 +143,7 @@ async function warmupStockSession(): Promise<boolean> {
 }
 
 function isBsaleHost(host: string): boolean {
-  return /(?:^|\.)bsale\.(?:cl|app)$/i.test(host)
+  return /(?:^|\.)bsale\.(?:cl|app|io)$/i.test(host)
 }
 
 async function gatherGotoWarmupUrls(): Promise<string[]> {
