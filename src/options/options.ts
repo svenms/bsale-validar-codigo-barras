@@ -20,6 +20,7 @@ type Settings = {
   volume: number // 0..1
   toneTruePreset: TonePreset
   toneFalsePreset: TonePreset
+  checkPendingInternalDispatch: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -33,12 +34,16 @@ const DEFAULT_SETTINGS: Settings = {
   volume: 0.6,
   toneTruePreset: 'classic',
   toneFalsePreset: 'classic',
+  checkPendingInternalDispatch: true,
 }
 
 const elFrom = document.getElementById('from_scratch') as HTMLInputElement | null
 const elDocsSales = document.getElementById('documents_sales') as HTMLInputElement | null
 const elMobile = document.getElementById('mobile_sales') as HTMLInputElement | null
 const elStockReception = document.getElementById('stock_reception') as HTMLInputElement | null
+const elCheckPendingInternalDispatch = document.getElementById(
+  'check_pending_internal_dispatch',
+) as HTMLInputElement | null
 const elVolume = document.getElementById('volume') as HTMLInputElement | null
 const elVolumeLabel = document.getElementById('volume_label') as HTMLSpanElement | null
 const elToneTruePreset = document.getElementById('tone_true_preset') as HTMLSelectElement | null
@@ -56,6 +61,7 @@ if (
   !elDocsSales ||
   !elMobile ||
   !elStockReception ||
+  !elCheckPendingInternalDispatch ||
   !elVolume ||
   !elVolumeLabel ||
   !elToneTruePreset ||
@@ -79,6 +85,7 @@ function render(): void {
   elDocsSales.checked = settings.pages.documents_sales
   elMobile.checked = settings.pages.mobile_sales
   elStockReception.checked = settings.pages.stock_reception
+  elCheckPendingInternalDispatch.checked = settings.checkPendingInternalDispatch
   elVolume.value = String(Math.round(settings.volume * 100))
   elVolumeLabel.textContent = String(Math.round(settings.volume * 100))
   elToneTruePreset.value = settings.toneTruePreset
@@ -135,6 +142,15 @@ function bind(): void {
         ...settings.pages,
         stock_reception: elStockReception.checked,
       },
+    }
+    render()
+    persist()
+  })
+
+  elCheckPendingInternalDispatch.addEventListener('change', () => {
+    settings = {
+      ...settings,
+      checkPendingInternalDispatch: elCheckPendingInternalDispatch.checked,
     }
     render()
     persist()

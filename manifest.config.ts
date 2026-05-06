@@ -3,9 +3,17 @@ import { defineManifest } from '@crxjs/vite-plugin'
 export default defineManifest({
   manifest_version: 3,
   name: 'Bsale Validar Codigo Barras',
-  version: '0.2.12',
-  permissions: ['storage', 'alarms'],
-  host_permissions: ['https://api.github.com/*'],
+  version: '0.2.13',
+  permissions: ['storage', 'alarms', 'tabs', 'cookies'],
+  host_permissions: [
+    'https://api.github.com/*',
+    'https://stock.bsale.app/*',
+    'https://landing.bsale.cl/*',
+    'https://clients.bsale.cl/*',
+    'https://app.bsale.cl/*',
+    'https://report.bsale.app/*',
+    'https://login.bsale.cl/*',
+  ],
   background: {
     service_worker: 'src/background.ts',
     type: 'module',
@@ -21,6 +29,17 @@ export default defineManifest({
         'https://stock.bsale.app/admin/stock/reception*',
       ],
       run_at: 'document_start',
+    },
+    {
+      js: ['src/content/internalDispatchNotifier.ts'],
+      matches: [
+        'https://landing.bsale.cl/*',
+        'https://clients.bsale.cl/*',
+        'https://app.bsale.cl/*',
+        'https://stock.bsale.app/*',
+        'https://report.bsale.app/*',
+      ],
+      run_at: 'document_idle',
     },
   ],
   web_accessible_resources: [

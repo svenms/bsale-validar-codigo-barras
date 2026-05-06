@@ -4,3 +4,9 @@ dist/
 .playwright-chromium-profile/
 *.log
 *.zip
+
+# Nunca subir artefactos de Playwright MCP (pueden contener datos sensibles).
+.playwright-mcp/
+page-*.yml
+page-*.yaml
+console-*.log
